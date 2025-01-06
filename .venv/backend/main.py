@@ -13,10 +13,10 @@ class Dog(BaseModel):
 app = FastAPI()
 
 
-
-
-
-
-@app.get("/")
-async def root():
+@app.get("/dog/{Dog_id}")
+async def get_dogs():
     return {"message": "Hello World"}
+
+@app.post("/dogs")
+async def create_dog(dog: Dog):
+    return dog
