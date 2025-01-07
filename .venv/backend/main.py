@@ -26,7 +26,7 @@ app = start_application()
 
 
 
-class Dog(BaseModel):
+class Dogbase(BaseModel):
     id: int
     name: str | None=None
     breed: str | None=None
@@ -44,6 +44,13 @@ async def read_dog(dog_id:int, db:db_dependency):
      if not result:
           raise HTTPException(status_code=404,detail="no doggo found")        
      return result
+
+@app.post("/dogs/")
+async def create_dog(newdog:Dogbase, db:db_dependency):
+     db_newdog=Dogs(id=newdog.id,name=newdog.name,breed=newdog.breed,weight=newdog.weight,color=newdog.color)
+     db.add(db_newdog)
+     db.commit()
+     db.refresh(db_newdog)
 
 
 
