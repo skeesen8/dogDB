@@ -1,14 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
-
-from fastapi import FastAPI
+from sqlmodel import select, func
+from typing import Annotated
+from sqlalchemy.orm import Session
+from fastapi import FastAPI, HTTPException, Path, Query
 from backend.config import settings
-from backend.session import engine 
-from backend.models import Base
+from backend.database import engine, SessionLocal 
+from backend.models import Base, Dogs
+from backend.database import get_db
+
+
+
 
 def create_tables():         
 	Base.metadata.create_all(bind=engine)
-        
+    
 
 def start_application():
     app = FastAPI(title=settings.PROJECT_NAME,version=settings.PROJECT_VERSION)
@@ -29,10 +35,18 @@ class Dog(BaseModel):
 
 app = FastAPI()
 
-@app.get("/dog/{Dog_id}")
-async def get_dogs():
-    return {"message": "Hello World"}
+db_dependency = Annotated[Session, Depends(get_db)]
 
-@app.post("/dogs")
-async def create_dog(dog: Dog):
-    return dog
+
+@app.get("/dogs/{dog_id}")
+async def read_dog(dog_id:int, db:db_dependency):
+     result = db.query(Dogs).filter(Dogs.id==dog_id).first()
+     if not result:
+          raise HTTPException(status_code=404,detail="no doggo found")        
+     return result
+
+
+
+    
+
+

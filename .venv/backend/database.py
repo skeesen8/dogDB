@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-SQLALCHEMY_DATABASE_URL = 'postgresql://postgres:Bright#1270@localhost/fastapi'
+SQLALCHEMY_DATABASE_URL = 'postgresql://postgres:sk2587@localhost:5434/dogdb'
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
