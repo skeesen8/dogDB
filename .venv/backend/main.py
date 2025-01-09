@@ -51,9 +51,25 @@ async def create_dog(newdog:Dogbase, db:db_dependency):
      db.add(db_newdog)
      db.commit()
      db.refresh(db_newdog)
+     return "success"
 
+dogfulllist = []
+dogsnorepeats=list(dogfulllist)
+listcomp = [dogfulllist.append(dogs) for dogs in dogfulllist if dogs not in dogfulllist]
 
+@app.get("/dogs/")
+async def get_dogs(db:db_dependency):
+     all_dogs = db.query(Dogs)
+     for dogs in all_dogs : dogfulllist.append(dogs)
+     return dogfulllist
 
+@app.delete("/dogs/{dog_id}")
+async def delete_dog(dog_id:int, db:db_dependency):
+     deleted_dog = db.query(Dogs).filter(Dogs.id == dog_id).first()
+     if not delete_dog:
+          raise HTTPException(status_code=404,detail="why would you delete a dog") 
+     db.delete(deleted_dog)
+     db.commit
+     return f"{deleted_dog.name} has been deleted :("
     
-
 
