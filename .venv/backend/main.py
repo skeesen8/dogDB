@@ -66,10 +66,20 @@ async def get_dogs(db:db_dependency):
 @app.delete("/dogs/{dog_id}")
 async def delete_dog(dog_id:int, db:db_dependency):
      deleted_dog = db.query(Dogs).filter(Dogs.id == dog_id).first()
-     if not delete_dog:
+     if not deleted_dog:
           raise HTTPException(status_code=404,detail="why would you delete a dog") 
      db.delete(deleted_dog)
      db.commit
+     db.refresh
      return f"{deleted_dog.name} has been deleted :("
-    
+
+@app.put("/dogs/{dog_id}")
+async def update_dog(dog_id:int, name:str, breed:str, weight:int, color:str, db:db_dependency):
+     db_dog = db.query(Dogs).filter(Dogs.id == dog_id).first()
+     db_dog.name = name
+     db_dog.breed = breed
+     db_dog.weight = weight
+     db_dog.color = color
+     db.commit()
+     return db_dog  
 
