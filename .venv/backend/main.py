@@ -4,12 +4,12 @@ from sqlmodel import select, func
 from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, HTTPException, Path, Query
+from fastapi.security import OAuth2PasswordBearer
 from backend.config import settings
 from backend.database import engine, SessionLocal 
-from backend.models import Base, Dogs
+from backend.models import Base, Dogs,Users
 from backend.database import get_db
-
-
+from backend.routers.users import router
 
 
 def create_tables():         
@@ -22,8 +22,16 @@ def start_application():
     return app
 
 
+
 app = start_application()
 
+class Userbase(BaseModel):
+    id:int
+    firstName: str | None=None
+    lastName:  str | None=None
+    userName:  str | None=None
+    password:  str | None=None
+    email:     str | None=None
 
 
 class Dogbase(BaseModel):
@@ -34,8 +42,12 @@ class Dogbase(BaseModel):
     color: str |None = None
 
 app = FastAPI()
+app.include_router(router)
 
 db_dependency = Annotated[Session, Depends(get_db)]
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
 
 
 @app.get("/dogs/{dog_id}")
@@ -83,3 +95,7 @@ async def update_dog(dog_id:int, name:str, breed:str, weight:int, color:str, db:
      db.commit()
      return db_dog  
 
+
+# app.get("/dogs/")
+# async def read_users(token: Annotated[str, Depends(oauth2_scheme)]):
+#     return {"token": token}
