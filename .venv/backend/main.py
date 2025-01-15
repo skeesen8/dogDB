@@ -25,13 +25,13 @@ def start_application():
 
 app = start_application()
 
-class Userbase(BaseModel):
-    id:int
-    firstName: str | None=None
-    lastName:  str | None=None
-    userName:  str | None=None
-    password:  str | None=None
-    email:     str | None=None
+# class Userbase(BaseModel):
+#     id:int
+#     firstName: str | None=None
+#     lastName:  str | None=None
+#     userName:  str | None=None
+#     password:  str | None=None
+#     email:     str | None=None
 
 
 class Dogbase(BaseModel):
