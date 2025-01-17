@@ -65,21 +65,20 @@ async def create_dog(newdog:Dogbase, db:db_dependency):
      db.refresh(db_newdog)
      return "success"
 
-dogfulllist = []
-dogsnorepeats=list(dogfulllist)
-listcomp = [dogfulllist.append(dogs) for dogs in dogfulllist if dogs not in dogfulllist]
 
 @app.get("/dogs/")
 async def get_dogs(db:db_dependency):
+     dogfulllist = []
      all_dogs = db.query(Dogs)
      for dogs in all_dogs : dogfulllist.append(dogs)
      return dogfulllist
 
 @app.delete("/dogs/{dog_id}")
 async def delete_dog(dog_id:int, db:db_dependency):
-     deleted_dog = db.query(Dogs).filter(Dogs.id == dog_id).first()
+     deleted_dog=db.get(Dogs,dog_id)
+     # deleted_dog = db.query(Dogs).filter(Dogs.id == dog_id).all()
      if not deleted_dog:
-          raise HTTPException(status_code=404,detail="why would you delete a dog") 
+          raise HTTPException(status_code=404,detail="cant delete object that doesnt exist") 
      db.delete(deleted_dog)
      db.commit
      db.refresh
