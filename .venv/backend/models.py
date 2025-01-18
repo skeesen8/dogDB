@@ -13,8 +13,11 @@ class Dogs(Base):
 class Users(Base):
     __tablename__ = "users"
     id = Column(Integer,primary_key=True,nullable=False)
-    firstName = Column(String,nullable=False)
-    lastName= Column(String,nullable=False)
-    userName = Column(String,nullable=False)
-    password = Column(String,nullable=False)
+    username = Column(String,nullable=False)
+    password= Column(String,nullable=False)
+    client_id = Column(String,nullable=False)
+    client_secret = Column(String,nullable=False)
     email = Column(String,nullable=False)
+    disabled = Column(Boolean, nullable=False)
+
+    
