@@ -3,21 +3,31 @@ from backend.models import Base, Dogs,Users
 from pydantic import BaseModel
 from typing import Annotated
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordBearer
 from backend.database import get_db
 
 router = APIRouter()
 db_dependency = Annotated[Session, Depends(get_db)]
 
-user_db = Users
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# class Userbase(BaseModel):
-#     id:int
-#     firstName: str | None=None
-#     lastName:  str | None=None
-#     userName:  str | None=None
-#     password:  str | None=None
-#     email:     str | None=None
+def fake_decode_token(token):
+    return Users(
+        username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+    )
 
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    user = fake_decode_token(token)
+    return user
+
+@router.get("/users/me")
+async def read_users_me(current_user: Annotated[Users, Depends(get_current_user)]):
+    return current_user
+
+
+@router.get("/users/")
+async def read_items(token: Annotated[str, Depends(oauth2_scheme)]):
+    return {"token": token}
 
 userlist = []
 
