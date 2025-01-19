@@ -22,7 +22,6 @@ def start_application():
     return app
 
 
-
 app = start_application()
 
 
@@ -46,10 +45,6 @@ app = FastAPI()
 app.include_router(router)
 
 db_dependency = Annotated[Session, Depends(get_db)]
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-
-
 
 @app.get("/dogs/{dog_id}")
 async def read_dog(dog_id:int, db:db_dependency):
