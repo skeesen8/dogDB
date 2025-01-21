@@ -1,96 +1,84 @@
-from fastapi import FastAPI, Depends
+from fastapi import APIRouter, Depends,HTTPException,status,FastAPI
+from backend.models import Base, Dogs,Users
 from pydantic import BaseModel
-from sqlmodel import select, func
 from typing import Annotated
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, HTTPException, Path, Query
-from fastapi.security import OAuth2PasswordBearer
-from backend.config import settings
-from backend.database import engine, SessionLocal 
-from backend.models import Base, Dogs,Users
+from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from backend.database import get_db
-from backend.routers.users import router
 
 
-def create_tables():         
-	Base.metadata.create_all(bind=engine)
+router = APIRouter()
+user_dependency = Annotated[Session, Depends(get_db)]
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+testusers=Users
+
+class Userbase(BaseModel):
+    id:int
+    client_id: int | None=None
+    client_secret:int | None=None
+    username:  str | None=None
+    password:  str | None=None
+    email:     str | None=None
+    disabled: bool | None=None
+    hashed_password: str | None=None
+
+def run_hash_password(password: str):
+    return password
+
+def fake_decode_token(token):
+    return Users(
+        username=token , email="test7",hashed_password="test7"
+    )
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    user = fake_decode_token(token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+@router.post("/token")
+async def login(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],db:user_dependency):
+    user_dict=db.query(Users).filter(Users.username==form_data.username).first()
+    if not user_dict:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    user = user_dict
+    hashed_password = run_hash_password(form_data.password)
+    if not hashed_password == user.password:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    return {"access_token": user.username, "token_type": "bearer"}
+
+
+@router.get("/users/me")
+async def read_users_me(current_user: Annotated[Users, Depends(get_current_user)]):
+    return current_user
+
+
+@router.get("/users/")
+async def read_items(token: Annotated[str, Depends(oauth2_scheme)]):
+    return {"token": token}
+
+
+
+@router.post("/users/")
+async def add_user(new_user:Userbase, db:user_dependency):
+    db_new_user = Users(
+    username=new_user.username,
+    id= new_user.id,
+    password = new_user.password,
+    email = new_user.email,
+    client_id=new_user.client_id,
+    client_secret=new_user.client_secret,
+    disabled=new_user.disabled,
+    hashed_password=new_user.hashed_password)
+    db.add(db_new_user)
+    db.commit()
+    db.refresh(db_new_user)
+    return "success"
+
     
-
-def start_application():
-    app = FastAPI(title=settings.PROJECT_NAME,version=settings.PROJECT_VERSION)
-    create_tables()
-    return app
-
-
-app = start_application()
-
-
-# class Userbase(BaseModel):
-#     id:int
-#     firstName: str | None=None
-#     lastName:  str | None=None
-#     userName:  str | None=None
-#     password:  str | None=None
-#     email:     str | None=None
-
-
-class Dogbase(BaseModel):
-    id: int
-    name: str | None=None
-    breed: str | None=None
-    weight: int | None=None
-    color: str |None = None
-
-app = FastAPI()
-app.include_router(router)
-
-db_dependency = Annotated[Session, Depends(get_db)]
-
-@app.get("/dogs/{dog_id}")
-async def read_dog(dog_id:int, db:db_dependency):
-     result = db.query(Dogs).filter(Dogs.id==dog_id).first()
-     if not result:
-          raise HTTPException(status_code=404,detail="no doggo found")        
-     return result
-
-@app.post("/dogs/")
-async def create_dog(newdog:Dogbase, db:db_dependency):
-     db_newdog=Dogs(id=newdog.id,name=newdog.name,breed=newdog.breed,weight=newdog.weight,color=newdog.color)
-     db.add(db_newdog)
-     db.commit()
-     db.refresh(db_newdog)
-     return "success"
-
-
-@app.get("/dogs/")
-async def get_dogs(db:db_dependency):
-     dogfulllist = []
-     all_dogs = db.query(Dogs)
-     for dogs in all_dogs : dogfulllist.append(dogs)
-     return dogfulllist
-
-@app.delete("/dogs/{dog_id}")
-async def delete_dog(dog_id:int, db:db_dependency):
-     deleted_dog=db.get(Dogs,dog_id)
-     # deleted_dog = db.query(Dogs).filter(Dogs.id == dog_id).all()
-     if not deleted_dog:
-          raise HTTPException(status_code=404,detail="cant delete object that doesnt exist") 
-     db.delete(deleted_dog)
-     db.commit
-     db.refresh
-     return f"{deleted_dog.name} has been deleted :("
-
-@app.put("/dogs/{dog_id}")
-async def update_dog(dog_id:int, name:str, breed:str, weight:int, color:str, db:db_dependency):
-     db_dog = db.query(Dogs).filter(Dogs.id == dog_id).first()
-     db_dog.name = name
-     db_dog.breed = breed
-     db_dog.weight = weight
-     db_dog.color = color
-     db.commit()
-     return db_dog  
-
-
-# app.get("/dogs/")
-# async def read_users(token: Annotated[str, Depends(oauth2_scheme)]):
-#     return {"token": token}
